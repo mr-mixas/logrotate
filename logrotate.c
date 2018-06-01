@@ -538,12 +538,17 @@ static int createOutputFile(char *fileName, int flags, struct stat *sb,
 		return -1;
 	}
 
+    /* skip if 'su' opt is in use (chown almost meaningless here, but cause
+     * errors when log file has anoter permissions). It seems it's much better
+     * to continue rotation than fail and stuck forever) */
+    if (geteuid() == getuid() && getegid() == getgid()) {
     if ((sb_create.st_uid != sb->st_uid || sb_create.st_gid != sb->st_gid) &&
 		fchown(fd, sb->st_uid, sb->st_gid)) {
 	message(MESS_ERROR, "error setting owner of %s to uid %d and gid %d: %s\n",
 		fileName, sb->st_uid, sb->st_gid, strerror(errno));
 	close(fd);
 	return -1;
+    }
     }
 
 #ifdef WITH_ACL
